@@ -19,11 +19,22 @@ export default (tmpl, obj) => {
         }
     ];
     if(!tmpl) return; 
+
+    // 自执行解析对象
     var p = function() {return parser;}();
-    if(/\#\#for/.test(tmpl)) {
+    
+    // 根据匹配解析相应原则
+    if(/\#\#for/igm.test(tmpl)) {
         tmpl = p.parserFor(tmpl, obj);
-    }
+    } else if(/\#\#if/igm.test(tmpl)) {
+        tmpl = p.parseif(tmpl, obj);
+    } else if(/\#\#\-/igm.test(tmpl)) {
+        tmpl = p.parseStatement(tmpl, obj);
+    } else if(/\{\{/gm.test(tmpl)){
+        tmpl = p.parseVar(tmpl, obj);
+    } 
     console.log('tmpl', tmpl);
+    return tmpl;
 };
 
 const parser = {
@@ -36,26 +47,26 @@ const parser = {
         }
         return temp;
     },
-    parserIf: function() {
+    parserIf: function(tmpl, obj) {
     
     },
     parserFor: function(tmpl, obj) {
         var str = [], temp = '',
-            pattern = /(<.*>)?\s*##for.*\{\s*(.*)\s*\}##\s*(<.*>)?/igm;
+            pattern = /(<.*>)?\s*##for.*\{\s*(.*)\s*\}##\s*(<.*>)?/igm,
+            split;
         
-        pattern.test(tmpl);
-        for(let i=1; i<4; i++) {
-            str[i] = RegExp['$' + i];
-            if(i !== 1 && i !== i.length-1) { 
-                temp += this.parserVar(str[i], obj);
-            } else {
-                temp += str[i];
+        split = pattern.exec(tmpl);
+        for(let i=1; i<split.length; i++) {
+            if(i !== 1 && i !== split.length-1) { 
+                temp += this.parserVar(split[i], obj);
+                continue;
             }
+            temp += split[i];
         }
         return temp;
     },
-    each: function() {
-        
+    parseStatement: function(tmpl, obj) {
+
     }
 };
 
