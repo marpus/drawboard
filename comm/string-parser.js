@@ -5,11 +5,21 @@
 
 export default (tmpl, obj) => {
     console.log('parser');
-    tmpl = `<ul>
+    tmpl = `##if(obj.aaa) {
+            <ul>
                 ##for(obj) {
                 <li>{{aaa}}</li>
                 }##
-            </ul>`;
+            </ul>
+            }##
+            ##if(obj.bbb) {
+            <ul>
+                ##for(obj) {
+                <li>{{aaa}}</li>
+                }##
+            </ul>
+            }##
+            `;
     obj = [
         {
             aaa: 'aaa'
@@ -21,18 +31,28 @@ export default (tmpl, obj) => {
     if(!tmpl) return; 
 
     // 自执行解析对象
-    var p = function() {return parser;}();
+    var p = function() {return parser;}(), split;
     
     // 根据匹配解析相应原则
-    if(/\#\#for/igm.test(tmpl)) {
-        tmpl = p.parserFor(tmpl, obj);
-    } else if(/\#\#if/igm.test(tmpl)) {
-        tmpl = p.parseif(tmpl, obj);
-    } else if(/\#\#\-/igm.test(tmpl)) {
-        tmpl = p.parseStatement(tmpl, obj);
-    } else if(/\{\{/gm.test(tmpl)){
-        tmpl = p.parseVar(tmpl, obj);
-    } 
+    tmpl = tmpl.replace(/\s*/gm, '');
+    split = /##for\((.+?)\)|##if\((.+?)\)/gm.exec(tmpl);
+    
+    for(let i=0; i<split.length; i++) {
+        tmpl = p.method('parse', split[i], [tmpl, obj]);
+    }
+
+    // if(/\#\#for/igm.test(tmpl)) {
+    //     tmpl = p.parserFor(tmpl, obj);
+    // } 
+    // if(/\#\#if/igm.test(tmpl)) {
+    //     tmpl = p.parseif(tmpl, obj);
+    // }
+    // if(/\#\#\-/igm.test(tmpl)) {
+    //     tmpl = p.parseStatement(tmpl, obj);
+    // } 
+    // if(/\{\{/gm.test(tmpl)){
+    //     tmpl = p.parseVar(tmpl, obj);
+    // } 
     console.log('tmpl', tmpl);
     return tmpl;
 };
@@ -67,6 +87,26 @@ const parser = {
     },
     parseStatement: function(tmpl, obj) {
 
+    },
+    getMethodFn: function(method, args) {
+        return this[method](args);
+    },
+    method: function(base, change, type = 'camel', split = '', args = []) {
+        console.log(this.getMethodName(base, change, type, split));
+        return this.getMethodFn(this.getMethodName(base, change, type, split), args);
+    },
+    getMethodName: function(base, change, type, s) {
+        switch(type) {
+            case 'camel':
+                return [base, 
+                        change.substring(0, 1).toUpperCase,
+                        change.substring(1)].join(s);
+                break;
+            case 'normal':
+            default:
+                return [base, change].join(s);
+                break;
+        }
     }
 };
 
