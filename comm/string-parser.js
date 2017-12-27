@@ -5,6 +5,7 @@
 
 export default (tmpl, obj) => {
     console.log('parser');
+    console.log('yy')
     tmpl = `##if(obj.aaa) {
             <ul>
                 ##for(obj) {
@@ -31,14 +32,12 @@ export default (tmpl, obj) => {
     if(!tmpl) return; 
 
     // 自执行解析对象
-    var p = function() {return parser;}(), split;
+    var p = function() {return parser;}(), split, 
+        pattern = /##(for|if)\((.+?)\)/g;
     
     // 根据匹配解析相应原则
-    tmpl = tmpl.replace(/\s*/gm, '');
-    split = /##for\((.+?)\)|##if\((.+?)\)/gm.exec(tmpl);
-    
-    for(let i=0; i<split.length; i++) {
-        tmpl = p.method('parse', split[i], [tmpl, obj]);
+    for(tmpl = p.removeTrim(tmpl); pattern.exec(tmpl); ) { 
+        p.method('parser', RegExp.$1, undefined, undefined,[tmpl, obj]);
     }
 
     // if(/\#\#for/igm.test(tmpl)) {
@@ -76,17 +75,20 @@ const parser = {
             split;
         
         split = pattern.exec(tmpl);
-        for(let i=1; i<split.length; i++) {
-            if(i !== 1 && i !== split.length-1) { 
-                temp += this.parserVar(split[i], obj);
-                continue;
-            }
-            temp += split[i];
-        }
+        // for(let i=1; i<split.length; i++) {
+        //     if(i !== 1 && i !== split.length-1) { 
+        //         temp += this.parserVar(split[i], obj);
+        //         continue;
+        //     }
+        //     temp += split[i];
+        // }
         return temp;
     },
     parseStatement: function(tmpl, obj) {
 
+    },
+    removeTrim: function(tmpl) {
+        return tmpl.replace(/\s*/gm, '');
     },
     getMethodFn: function(method, args) {
         return this[method](args);
@@ -99,7 +101,7 @@ const parser = {
         switch(type) {
             case 'camel':
                 return [base, 
-                        change.substring(0, 1).toUpperCase,
+                        change.substring(0, 1).toUpperCase(),
                         change.substring(1)].join(s);
                 break;
             case 'normal':
