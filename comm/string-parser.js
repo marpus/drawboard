@@ -5,7 +5,6 @@
 
 export default (tmpl, obj) => {
     console.log('parser');
-    console.log('yy')
     tmpl = `##if(obj.aaa) {
             <ul>
                 ##for(obj) {
@@ -37,7 +36,12 @@ export default (tmpl, obj) => {
     
     // 根据匹配解析相应原则
     for(tmpl = p.removeTrim(tmpl); pattern.exec(tmpl); ) { 
-        p.method('parser', RegExp.$1, undefined, undefined,[tmpl, obj]);
+        tmpl = p.method({
+            base: 'parser',
+            change: RegExp.$1,
+            args: [tmpl, obj]
+        });
+        console.log('parserT', tmpl);
     }
 
     // if(/\#\#for/igm.test(tmpl)) {
@@ -67,7 +71,69 @@ const parser = {
         return temp;
     },
     parserIf: function(tmpl, obj) {
-    
+        var patternS = /##if\((.*?)\)\{(.*?)\}/,
+            patternE = /[\s\S]*?\}(?=.*#)/igm,
+            //patternE = /^##if[\s\S]*?\}(?=.*#)/igm, 
+            str = [], split, theStr, otherStr, arr, tmp, forStr = '';
+        out: for(let i=1; split = patternE.exec(tmpl);) {
+            str = split[0].match(/(##[-]?)/igm);
+            patternE.lastIndex = 0;
+            for(let j=str.length; patternE.exec(tmpl); j--) {
+                if(1 === j) {
+                    theStr = tmpl.substring(0, patternE.lastIndex + 2);
+                    otherStr = tmpl.substring(patternE.lastIndex + 2);
+                    break out;
+                }
+            } 
+        }
+        split = /^##if\((.*)\).*?{/igm.exec(theStr)
+        // 变量解析
+        if(/\./.test(split[1])) {    
+            arr = split[1].split('.');
+            if(/obj/i.test(arr[0])) {
+                if(/object/.test(obj.toString())) {
+                    for(let i in obj) {
+                        if(obj[i][arr[1]]) {
+                            forStr += theStr.match(/^##if.*\{([\s\S]*)\}##/)[1];
+                        } else {
+                            forStr += '';
+                        }
+                    }
+                } else {
+                    if(obj[arr[1]]) {
+                        theStr = /^##if.*\{([\s\S]*)\}##/.match(theStr)[1];
+                    } else {
+                        theStr = '';
+                    }
+                }
+            } else if(/window|global/i.test(arr[0])){
+                if(window[arr[1]] || global[arr[1]]) {
+                    theStr = /^##if.*\{([\s\S]*)\}##/.match(theStr)[1];
+                } else {
+                    thisStr = ''
+                }
+            } else {
+                tmp = eval('(' + arr[0] + ')');
+                if(tmp[arr[1]]) {
+                    theStr = /^##if.*\{([\s\S]*)\}##/.match(theStr)[1];
+                } else {
+                    theStr = '';
+                }
+            }
+        } else {
+            if(obj[split[1]]) {
+                theStr = /^##if.*\{([\s\S]*)\}##/.match(theStr)[1];
+            } else {
+                theStr = '';
+            }
+        }   
+        if(forStr) return forStr + otherStr;
+        return theStr + otherStr;
+        // var split = pattern2.exec(tmpl);
+        // for(let i=1; pattern.exec(tmpl); i++) {
+        //     str = tmpl.substring(pattern2.lastIndex, pattern.lastIndex);
+            
+        // } 
     },
     parserFor: function(tmpl, obj) {
         var str = [], temp = '',
@@ -88,15 +154,22 @@ const parser = {
 
     },
     removeTrim: function(tmpl) {
-        return tmpl.replace(/\s*/gm, '');
+        //return tmpl.replace(/^(\s+)|(\s+)$|(\s+(?=.*?>))/gm, 
+            //(match, p) => '');
+        return tmpl.replace(/^\s+|\s+$/gm, '');
+        //return tmpl.replace(/^\s*|\s*$|>\s*?</gm, '');
     },
     getMethodFn: function(method, args) {
-        return this[method](args);
+        return this[method](...args);
+        //return this[method].apply(this, args);
+        //return this[method](args);
     },
-    method: function(base, change, type = 'camel', split = '', args = []) {
-        console.log(this.getMethodName(base, change, type, split));
+    method: function({base, change, type='camel', split='', args}) {
         return this.getMethodFn(this.getMethodName(base, change, type, split), args);
     },
+    // method: function(base, change, type = 'camel', split = '', args = []) {
+    //     return this.getMethodFn(this.getMethodName(base, change, type, split), args);
+    // },
     getMethodName: function(base, change, type, s) {
         switch(type) {
             case 'camel':
