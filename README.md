@@ -90,7 +90,7 @@ var基本格式
 v0.1x
 实现模板解析基本流程
 v0.2x
-面条式实现for,if,var模板的解析
+普通方式实现for,if,var模板的解析
 v0.3x
 封装方式实现for,if,var,statement模板的解析
 v0.4x
