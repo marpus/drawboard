@@ -34,17 +34,17 @@ string-parser.v.0.1 - string-parser.v.0.5规则
 
 ### condition选值
 ---
-- 参数对象，对象中的一个属性或变量
+- 参数对象，对象中的一个属性或变量，不区分大小写
 ```
 obj.aaa / this.aaa / {{aaa}} / aaa
 obj.aaa.bbb.ccc... = {{aaa.bbb.ccc...}} = aaa.bbb.ccc...
 ```
-- 局部对象，以p对象为例
+- 局部对象，区分大小写，以p对象为例，对象变量名不能于参数对象重名，否则按参数对象解析，不建议
 ``` 
 p.aaa
 p.aaa.bbb.ccc...
 ```
-- 全局对象
+- 全局对象，不区分大小写
 ```
 window.aaa / global.aaa / w.aaa / g.aaa 
 window.aaa.bbb.ccc... 

@@ -6,30 +6,90 @@
 export default (tmpl, obj) => {
     console.log('parser');
     
-    tmpl = `##if(obj.aaa) {
-            <ul>
-                ##for(obj) {
-                <li>{{aaa}}</li>
-                }##
-            </ul>
-            }##
-            ##if(obj.bbb) {
-            <ul>
-                ##for(obj.results) {
-                <li>{{aaa}}</li>
-                }##
-            </ul>
-            }##
-            `;
+    // tmpl = '<ul>\
+    //             ##if(a) {\
+    //                 <li>a</li>\
+    //             }##\
+    //             ##if({{a}}) {\
+    //                 <li>{{a}}</li>\
+    //             }##\
+    //             ##if({{obj.a}}) {\
+    //                 <li>{{a}}</li>\
+    //             }##\
+    //             ##if(obj.a) {\
+    //                 <li>obj.a</li>\
+    //             }##\
+    //             ##if(this.a) {\
+    //                 <li>this.a</li>\
+    //             }##\
+    //             ##if(aa) {\
+    //                 <li>aa</li>\
+    //             }##\
+    //             ##if({{aa}}) {\
+    //                 <li>{{aa}}</li>\
+    //             }##\
+    //             ##if({{obj.aa}}) {\
+    //                 <li>{{aa}}</li>\
+    //             }##\
+    //             ##if(obj.aa) {\
+    //                 <li>obj.aa</li>\
+    //             }##\
+    //             ##if(this.aa) {\
+    //                 <li>this.aa</li>\
+    //             }##\
+    //             ##if(a) {\
+    //                 <li>a</li>\
+    //             }##\
+    //             ##if({{a}}) {\
+    //                 <li>{{a}}</li>\
+    //             }##\
+    //             ##if({{obj.a}}) {\
+    //                 <li>{{a}}</li>\
+    //             }##\
+    //             ##if(obj.a) {\
+    //                 <li>obj.a</li>\
+    //             }##\
+    //             ##if(this.a) {\
+    //                 <li>this.a</li>\
+    //             }##\
+    //             ##if(aa) {\
+    //                 <li>aa</li>\
+    //             }##\
+    //             ##if({{aa}}) {\
+    //                 <li>{{aa}}</li>\
+    //             }##\
+    //             ##if({{obj.aa}}) {\
+    //                 <li>{{aa}}</li>\
+    //             }##\
+    //             ##if(obj.aa) {\
+    //                 <li>obj.aa</li>\
+    //             }##\
+    //             ##if(this.aa) {\
+    //                 <li>this.aa</li>\
+    //             }##\
+    //         </ul>'
+    // tmpl = `##if(this.aaa) {
+    //         <ul>
+    //             ##for(obj) {
+    //             <li>{{aaa}}</li>
+    //             }##
+    //         </ul>
+    //         }##
+    //         ##if(obj.bbb) {
+    //         <ul>
+    //             ##for(obj.results) {
+    //             <li>{{aaa}}</li>
+    //             }##
+    //         </ul>
+    //         }##
+    //         `;
     
-    obj = [
-        {
-            aaa: 'aaa'
-        },
-        {
-            aaa: 'bbb'
-        }
-    ];
+    // obj = {
+    //     aaa: 'aaa',
+    //     results:[
+            
+    //     ],
+    // };
     
     if(!tmpl) return; 
     
@@ -41,12 +101,14 @@ export default (tmpl, obj) => {
 
 const parser = {
     patternIfFor: /##(if|for)/g,
-    patternIf: /##if\s*?\((.*?)\)/g,
+    patternIf: /##if\s*?\(([\S\s]*?)\)\s*\{([\s\S]*)\}##/g,
     patternFor: /##for\s*?\((.*?)\)/g,
     patternVar: /\{\{(?!-)(.*?)\}\}/g,
     patternVarE: /\}\}/g,
-    patternE: /}\s*?(?=##)/g,
-    patternHash: /##/,
+    patternE: /[\s\S]*?\}(?=\s*##)/g, 
+    patternHash: /##/g,
+    patternThis: /this|obj/ig,
+    patternG: /^[wg]/ig,
     parser(tmpl, obj) {
         var t = this, arr;
         // 设置全局变量
@@ -84,8 +146,26 @@ const parser = {
         }
     }, 
     parserIf(t, tmpl, obj) {
-        var str1, str2;
-        var a = t.patternIf.exec(tmpl);
+        var ifStr, ifCondition = '', ifStatement = '', 
+            {bstr, str, astr} = t.analysis({
+                base: 'split',
+                change: 'template',
+                args: [tmpl] 
+            });
+        t.patternIf.lastIndex = 0;
+        ifStr = t.patternIf.exec(str);
+        ifCondition = t.removeTrim(ifStr[1]);
+        ifStatement = t.removeTrim(ifStr[2]);
+        var {cond, arr} = t.analysis({
+            base: 'parser',
+            change: 'condition',
+            args: [ifCondition, obj]
+        });
+        for(let i=1, len=arr.length; i<len; i++) {
+            cond = cond[t.removeTrim(arr[i])];
+            if(!cond) break;
+        }
+        return [bstr, cond ? ifStatement : '', astr].join('');
     },
     parserFor(t, tmpl, obj) {
 
@@ -96,8 +176,41 @@ const parser = {
     parserStatement(t, tmpl, obj) {
 
     },
+    parserCondition(t, cond, obj) {
+        var arr;
+        t.patternThis.lastIndex = 0;
+        t.patternG.lastIndex = 0;
+        if(/\.(?![\s\S]*\}\})/.test(cond)) {
+            arr = cond.split('.');
+            arr[0] = t.removeTrim(arr[0]);
+            cond = t.patternThis.test(arr[0]) ? obj :
+                    t.patternG.test(arr[0]) ? t.g : (obj && obj[arr[0]]) ?
+                    obj : eval('(' + arr[0] + ')');
+        } else {
+            arr = cond.replace(/\{\{|\}\}/g, '').split('.');
+            !t.patternThis.test(t.removeTrim(arr[0])) && arr.unshift('obj');      
+            cond = obj;
+        }
+        return {cond, arr};
+    },
     removeTrim(tmpl) {
         return tmpl.replace(/^\s*|\s*$/gm, '');
+    },
+    splitTemplate(t, tmpl) {
+        var arr, str;
+        t.patternE.lastIndex = 0;
+        arr = t.patternE.exec(tmpl);
+        str = arr[0].match(t.patternHash);
+        t.patternE.lastIndex = 0;
+        for(let i=str.length; t.patternE.exec(tmpl); i--) {
+            if(1 === i) break;
+        }
+        str = tmpl.substring(0, t.patternE.lastIndex + 2);
+        return {
+            str: t.removeTrim(str),
+            bstr: t.removeTrim(str.split('##')[0]),
+            astr: t.removeTrim(tmpl.substring(t.patternE.lastIndex + 2))
+        };
     },
     globalEnv(t = this) {
         t.g = global || window;
