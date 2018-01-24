@@ -5,90 +5,18 @@
 
 export default (tmpl, obj) => {
     console.log('parser');
-    
+
     // tmpl = '<ul>\
-    //             ##if(a) {\
-    //                 <li>a</li>\
+    //             ##if(obj.b.aa) {\
+    //             <li>obj.b.aa</li>\
     //             }##\
-    //             ##if({{a}}) {\
-    //                 <li>{{a}}</li>\
-    //             }##\
-    //             ##if({{obj.a}}) {\
-    //                 <li>{{a}}</li>\
-    //             }##\
-    //             ##if(obj.a) {\
-    //                 <li>obj.a</li>\
-    //             }##\
-    //             ##if(this.a) {\
-    //                 <li>this.a</li>\
-    //             }##\
-    //             ##if(aa) {\
-    //                 <li>aa</li>\
-    //             }##\
-    //             ##if({{aa}}) {\
-    //                 <li>{{aa}}</li>\
-    //             }##\
-    //             ##if({{obj.aa}}) {\
-    //                 <li>{{aa}}</li>\
-    //             }##\
-    //             ##if(obj.aa) {\
-    //                 <li>obj.aa</li>\
-    //             }##\
-    //             ##if(this.aa) {\
-    //                 <li>this.aa</li>\
-    //             }##\
-    //             ##if(a) {\
-    //                 <li>a</li>\
-    //             }##\
-    //             ##if({{a}}) {\
-    //                 <li>{{a}}</li>\
-    //             }##\
-    //             ##if({{obj.a}}) {\
-    //                 <li>{{a}}</li>\
-    //             }##\
-    //             ##if(obj.a) {\
-    //                 <li>obj.a</li>\
-    //             }##\
-    //             ##if(this.a) {\
-    //                 <li>this.a</li>\
-    //             }##\
-    //             ##if(aa) {\
-    //                 <li>aa</li>\
-    //             }##\
-    //             ##if({{aa}}) {\
-    //                 <li>{{aa}}</li>\
-    //             }##\
-    //             ##if({{obj.aa}}) {\
-    //                 <li>{{aa}}</li>\
-    //             }##\
-    //             ##if(obj.aa) {\
-    //                 <li>obj.aa</li>\
-    //             }##\
-    //             ##if(this.aa) {\
-    //                 <li>this.aa</li>\
-    //             }##\
-    //         </ul>'
-    // tmpl = `##if(this.aaa) {
-    //         <ul>
-    //             ##for(obj) {
-    //             <li>{{aaa}}</li>
-    //             }##
-    //         </ul>
-    //         }##
-    //         ##if(obj.bbb) {
-    //         <ul>
-    //             ##for(obj.results) {
-    //             <li>{{aaa}}</li>
-    //             }##
-    //         </ul>
-    //         }##
-    //         `;
+    //         </ul>';
     
     // obj = {
-    //     aaa: 'aaa',
-    //     results:[
-            
-    //     ],
+    //     a: 'a',
+    //     b: {
+    //         aa: true
+    //     }
     // };
     
     if(!tmpl) return; 
@@ -183,9 +111,9 @@ const parser = {
         if(/\.(?![\s\S]*\}\})/.test(cond)) {
             arr = cond.split('.');
             arr[0] = t.removeTrim(arr[0]);
-            cond = t.patternThis.test(arr[0]) ? obj :
-                    t.patternG.test(arr[0]) ? t.g : (obj && obj[arr[0]]) ?
-                    obj : eval('(' + arr[0] + ')');
+            t.patternThis.test(arr[0]) ? cond = obj :
+                t.patternG.test(arr[0]) ? cond = t.g : (obj && obj[arr[0]]) ?
+                (cond = obj, arr.unshift('obj')) : cond = eval('(' + arr[0] + ')');
         } else {
             arr = cond.replace(/\{\{|\}\}/g, '').split('.');
             !t.patternThis.test(t.removeTrim(arr[0])) && arr.unshift('obj');      
@@ -205,10 +133,9 @@ const parser = {
         for(let i=str.length; t.patternE.exec(tmpl); i--) {
             if(1 === i) break;
         }
-        str = tmpl.substring(0, t.patternE.lastIndex + 2);
         return {
-            str: t.removeTrim(str),
-            bstr: t.removeTrim(str.split('##')[0]),
+            str: t.removeTrim(tmpl.substring(0, t.patternE.lastIndex + 2)),
+            bstr: t.removeTrim(tmpl.split('##')[0]),
             astr: t.removeTrim(tmpl.substring(t.patternE.lastIndex + 2))
         };
     },
