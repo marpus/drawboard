@@ -286,6 +286,62 @@ const TwoAorAA = {
         </ul>',
         res: '<ul><li>{{obj.b.aa}}</li><li>{{this.b.aa}}</li><li>{{b.aa}}</li><li>obj.b.aa</li><li>b.aa</li><li>this.b.aa</li></ul>'
 };
+// 多层对象
+const ThreeObj = {
+    a: 'a',
+    c: {
+        aa: true,
+        bb: {
+            aaa: '',
+            bbb: 'a'
+        }
+    },
+    d: {
+        aa: {
+            aaa: true,
+            bbb: '',
+            ccc: {
+                aaaa: true,
+                bbbb: {
+                    aaaaa: true,
+                    ccccc: ''
+                },
+
+            }
+        },
+        bb: ''
+    }
+};
+const arr = ['a', 'b', 'c', 'd'];
+const type = ['n', 't', 'o', 'wn', 'wt', 'wo'];
+const ThreeAorAA = {};
+// 全局对象
+// window.obj = {
+//     a: 'a',
+//     c: {
+//         aa: true,
+//         bb: {
+//             aaa: '',
+//             bbb: 'a'
+//         }
+//     },
+//     d: {
+//         aa: {
+//             aaa: true,
+//             bbb: '',
+//             ccc: {
+//                 aaaa: true,
+//                 bbbb: {
+//                     aaaaa: true,
+//                     ccccc: ''
+//                 },
+
+//             }
+//         },
+//         bb: ''
+//     }
+// };
+// const winThreeAorAA = {};
 describe('parser', function() {
   describe('just if => parserIf', function() {
     // it('condition of if is a or obj.a or this.a', function() {
@@ -334,5 +390,20 @@ describe('parser', function() {
     // it('condition of if is all of two floors', function() {
     //     assert.equal(parser(TwoAorAA.tmpl, objTwo), TwoAorAA.res);
     // });
+    it('condition of if is all of each floors', function() {
+        var c = t = 0;
+        var tmpl = '<ul>\n';
+        var res = 
+        for(let i in ThreeObj) {
+            t = Math.floor(Math.randow(0, 1) * 6);
+            if(arr[c] !== i) {
+                
+            } 
+            tmpl += '##if()'
+            console.log(i);
+        }
+        tmpl = [tmpl, '</ul>'].join('');
+        //assert.equal(parser(TwoAorAA.tmpl, objTwo), TwoAorAA.res);
+    });
   });
 });
