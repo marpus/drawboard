@@ -150,9 +150,14 @@ const parser = {
     },
     is(obj, type) {
         if('string' !== typeof type && 'object' !== typeof type) return; 
+        if('object' !== typeof obj) {
+            obj = typeof obj;
+            return -1 !== obj.indexOf(type) ? true : false;
+        }
         obj = Object.prototype.toString.call(obj);
-        return 'string' === typeof type ? 
-                obj.test(new RegExp([type, ']'].join(''), i)) ? 
-                true : obj.test(type) ? true : false;
+        if('string' === typeof type) {
+            return new RegExp([type, ']'].join(''), i).test(obj) ? true : false;
+        }
+        return type.test(obj) ? true : false;
     }
 };
