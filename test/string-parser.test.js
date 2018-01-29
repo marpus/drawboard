@@ -390,10 +390,10 @@ describe('parser', function() {
     // it('condition of if is all of two floors', function() {
     //     assert.equal(parser(TwoAorAA.tmpl, objTwo), TwoAorAA.res);
     // });
-    it('condition of if is all of each floors', function() {
+    it('condition of if is all of each floors', function() {debugger
         var c = t = 0;
         var tmpl = '<ul>\n';
-        var res = 
+        var res = '';
         for(let i in ThreeObj) {
             t = Math.floor(Math.randow(0, 1) * 6);
             if(arr[c] !== i) {

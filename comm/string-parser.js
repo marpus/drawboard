@@ -3,7 +3,115 @@
  * Author Maple Joe
  */
 
+const type = ['n', 't', 'o', 'wn', 'wt', 'wo'];
+const ThreeObj = {
+    a: 'a',
+    c: {
+        aa: true,
+        bb: {
+            aaa: '',
+            bbb: 'a'
+        }
+    },
+    d: {
+        aa: {
+            aaa: true,
+            bbb: '',
+            ccc: {
+                aaaa: true,
+                bbbb: {
+                    aaaaa: true,
+                    ccccc: ''
+                },
+
+            }
+        },
+        bb: ''
+    }
+};
+function getArr(len) {
+    var baseCode = 'a'.charCodeAt();
+    var arr = [];
+    for(let i=0; i<len; i++) {
+        arr.push(String.fromCharCode(baseCode + i));
+    } 
+    return arr;
+}
+function test() {
+    var arr = getArr(4), count = 0, 
+        temp, res, t, condition;
+    
+    temp = res = '<ul>';
+
+    // for(let i=0, len = arr.length; i<len; i++) {
+    //     t = Math.floor(Math.random(0, 1) * 6);
+    //     switch(t) {
+    //         case 0:
+    //             condition = i.toString();
+    //             break;
+    //         case 1:
+    //             condition = 'this.' + i; 
+    //             break;
+    //         case 2:
+    //             condition = 'obj.' + i;
+    //             break;
+    //         case 3:
+    //             condition = '{{' + i + '}}';
+    //             break;
+    //         case 4:
+    //             condition = '{{this.'+ i + '}}';
+    //             break;
+    //         case 5:
+    //             condition = '{{this.obj'+ i + '}}';
+    //             break;
+    //     }
+    //     ThreeObj[i] 
+    // }
+
+    for(let i in ThreeObj) {
+        t = Math.floor(Math.random(0, 1) * 6)
+        
+        switch(t) {
+            case 0:
+                condition = i.toString();
+                break;
+            case 1:
+                condition = 'this.' + i; 
+                break;
+            case 2:
+                condition = 'obj.' + i;
+                break;
+            case 3:
+                condition = '{{' + i + '}}';
+                break;
+            case 4:
+                condition = '{{this.'+ i + '}}';
+                break;
+            case 5:
+                condition = '{{this.obj'+ i + '}}';
+                break;
+        }
+
+        temp += '##if(' + condition + ') {\
+            <li>' + condition + '</li>\
+        }##';
+        if(arr[count] === i) {
+            res += '<li>' + condition + '</li>'; 
+            count++;
+        } else {
+            count = count + 2;
+        }
+        
+    }
+    count = 0;
+    temp += '</ul>';
+    res += '</ul>';
+    console.log(temp);
+    console.log(res);
+}
+
 export default (tmpl, obj) => {
+    return test();
     console.log('parser');
 
     // tmpl = '<ul>\
@@ -20,7 +128,7 @@ export default (tmpl, obj) => {
     // };
     
     if(!tmpl) return; 
-    
+
     tmpl = parser.parser(tmpl, obj);
 
     console.log('tmpl', tmpl);
@@ -156,7 +264,7 @@ const parser = {
         }
         obj = Object.prototype.toString.call(obj);
         if('string' === typeof type) {
-            return new RegExp([type, ']'].join(''), i).test(obj) ? true : false;
+            return new RegExp([type, ']'].join(''), 'i').test(obj) ? true : false;
         }
         return type.test(obj) ? true : false;
     }
