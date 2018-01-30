@@ -3,7 +3,6 @@
  * Author Maple Joe
  */
 export default (tmpl, obj) => {
-    return test();
     console.log('parser');
 
     // tmpl = '<ul>\

@@ -313,6 +313,82 @@ const ThreeObj = {
     }
 };
 const type = ['n', 't', 'o', 'wn', 'wt', 'wo'];
+function getArr(len) {
+    var baseCode = 'a'.charCodeAt();
+    var arr = [];
+    for(let i=0; i<len; i++) {
+        arr.push(String.fromCharCode(baseCode + i));
+    } 
+    return arr;
+}
+function render(str, arr, obj, level, temp, res) {
+    var tmp = '', o, flag = true, strArr, len;
+    if(!obj) {
+        flag = false;
+    } else if('object' !== typeof obj) {
+        strArr = str.split('.');
+        len = strArr[strArr.length-1].length;
+        for(let i=0; i<len+1; i++) {
+            tmp += arr[0];
+        }
+        o = render(str + '.' + tmp, arr, obj[tmp], ++level, temp, res);
+        temp = o.temp;
+        res = o.res;
+    } else {
+        for(let i in obj) {
+            o = render(str + '.' + i, arr, obj[i], ++level, temp, res);
+            temp = o.temp;
+            res = o.res;
+        }
+    }
+    var condition;
+    switch(Math.floor(Math.random(0, 1) * 6)) {
+        case 0:
+            condition = str;
+            break;
+        case 1:
+            condition = 'this.' + str; 
+            break;
+        case 2:
+            condition = 'obj.' + str;
+            break;
+        case 3:
+            condition = '{{' + str + '}}';
+            break;
+        case 4:
+            condition = '{{this.'+ str + '}}';
+            break;
+        case 5:
+            condition = '{{obj.'+ str + '}}';
+            break;
+    };
+    temp += '##if(' + condition + ') {\
+        <li>' + condition + '</li>\
+    }##\
+    ';
+    if(flag) {
+        res += '<li>' + condition + '</li>'; 
+    }
+    return {temp, res};
+}
+function test() {
+    var arr = getArr(4), count = 0, 
+        temp, res, t, condition, obj;
+
+    temp = res = '<ul>';
+
+    for(let i=0, len = arr.length; i<len; i++) {
+        obj = render(arr[i], arr, ThreeObj[arr[i]], 0, temp, res);
+        temp = obj.temp;
+        res = obj.res;
+    }
+    temp += '</ul>';
+    res += '</ul>';
+    // console.log('temp', temp);
+    // console.log('res', res);
+    return {temp, res};
+
+}
 // 全局对象
 // window.obj = {
 //     a: 'a',
@@ -390,83 +466,9 @@ describe('parser', function() {
     // });
     it('condition of if is all of each floors', function() {
         var {temp, res} = test();
+        console.log(temp);
+        console.log(res);
         assert.equal(parser(temp, ThreeObj), res);
     });
   });
 });
-function getArr(len) {
-    var baseCode = 'a'.charCodeAt();
-    var arr = [];
-    for(let i=0; i<len; i++) {
-        arr.push(String.fromCharCode(baseCode + i));
-    } 
-    return arr;
-}
-function render(str, arr, obj, level, temp, res) {
-    var tmp = '', o, flag = true, strArr, len;
-    if(!obj) {
-        flag = false;
-    } else if('object' !== typeof obj) {
-        strArr = str.split('.');
-        len = strArr[strArr.length-1].length;
-        for(let i=0; i<len+1; i++) {
-            tmp += arr[0];
-        }
-        o = render(str + '.' + tmp, arr, obj[tmp], ++level, temp, res);
-        temp = o.temp;
-        res = o.res;
-    } else {
-        for(let i in obj) {
-            o = render(str + '.' + i, arr, obj[i], ++level, temp, res);
-            temp = o.temp;
-            res = o.res;
-        }
-    }
-    var condition;
-    switch(Math.floor(Math.random(0, 1) * 6)) {
-        case 0:
-            condition = str;
-            break;
-        case 1:
-            condition = 'this.' + str; 
-            break;
-        case 2:
-            condition = 'obj.' + str;
-            break;
-        case 3:
-            condition = '{{' + str + '}}';
-            break;
-        case 4:
-            condition = '{{this.'+ str + '}}';
-            break;
-        case 5:
-            condition = '{{obj.'+ str + '}}';
-            break;
-    };
-    temp += '##if(' + condition + ') {\
-        <li>' + condition + '</li>\
-    }##\
-    ';
-    if(flag) {
-        res += '<li>' + condition + '</li>'; 
-    }
-    return {temp, res};
-}
-function test() {
-    var arr = getArr(4), count = 0, 
-        temp, res, t, condition, obj;
-
-    temp = res = '<ul>';
-
-    for(let i=0, len = arr.length; i<len; i++) {
-        obj = render(arr[i], arr, ThreeObj[arr[i]], 0, temp, res);
-        temp = obj.temp;
-        res = obj.res;
-    }
-    temp += '</ul>';
-    res += '</ul>';
-    // console.log('temp', temp);
-    // console.log('res', res);
-    return {temp, res};
-
-}
