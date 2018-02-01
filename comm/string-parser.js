@@ -5,6 +5,45 @@
 export default (tmpl, obj) => {
     console.log('parser');
 
+    tmpl = '<ul>\
+                ##for(obj.a) {\
+                <li>{{id}}</li>\
+                <li>{{text}}</li>\
+                }##\
+            </ul>';
+    
+    tmpl = '<div>\
+                ##for({{obj.b.aa}}) {\
+                <ul>\
+                    <li>{{id}}</li>\
+                    <li>{{text}}</li>\
+                </ul>\
+                }##\
+            </div>';
+
+    obj = {
+        a: {
+            id: '01',
+            text: 'text1'
+        },
+        b: {
+            aa: [
+                {
+                    id: '01',
+                    text: 'text1'
+                },
+                {
+                    id: '02',
+                    text: 'text2'
+                },
+                {
+                    id: '03',
+                    text: 'text3'
+                }
+            ]
+        }
+    }
+
     // tmpl = '<ul>\
     //             ##if(obj.b.aa) {\
     //             <li>obj.b.aa</li>\
@@ -29,7 +68,7 @@ export default (tmpl, obj) => {
 const parser = {
     patternIfFor: /##(if|for)/g,
     patternIf: /##if\s*?\(([\S\s]*?)\)\s*\{([\s\S]*)\}##/g,
-    patternFor: /##for\s*?\((.*?)\)/g,
+    patternFor: /##for\s*?\(([\S\s]*?)\)\s*{([\S\s]*)\}##/g,
     patternVar: /\{\{(?!-)(.*?)\}\}/g,
     patternVarE: /\}\}/g,
     patternE: /[\s\S]*?\}(?=\s*##)/g, 
@@ -88,17 +127,65 @@ const parser = {
             change: 'condition',
             args: [ifCondition, obj]
         });
-        for(let i=1, len=arr.length; i<len; i++) {
-            cond = cond[t.removeTrim(arr[i])];
-            if(!cond) break;
+        if(cond) {
+            for(let i=1, len=arr.length; i<len; i++) {
+                cond = cond[t.removeTrim(arr[i])];
+                if(!cond) break;
+            }
         }
         return [bstr, cond ? ifStatement : '', astr].join('');
     },
     parserFor(t, tmpl, obj) {
-
+        var forStr, forCondition, forStatement, tmp = '',
+            {bstr, str, astr} = t.analysis({
+            base: 'split',
+            change: 'template',
+            args: [tmpl]
+        });
+        t.patternFor.lastIndex = 0;
+        forStr = t.patternFor.exec(str);
+        forCondition = t.removeTrim(forStr[1]);
+        forStatement = t.removeTrim(forStr[2]);
+        var {cond, arr} = t.analysis({
+            base: 'parser',
+            change: 'condition',
+            args: [forCondition, obj]
+        });
+        if(cond) {
+            for(let i=1, len=arr.length; i<len; i++) {
+                cond = cond[t.removeTrim(arr[i])];
+                if(!cond) break;
+            }
+        }
+        if(cond) {
+            if(/\{\{(?!-)/g.test(forStatement)) {
+                tmp = t.analysis({
+                    base: 'parser',
+                    change: 'var',
+                    args: [forStatement, cond]
+                });
+            }
+        }
+        return [bstr, cond ? tmp : '', astr].join('');
     },
     parserVar(t, tmpl, obj) {
-
+        if(!obj) return tmpl;
+        var temp = '', str = '';
+        if(t.isObject(obj)) {
+            for(let j in obj) {
+                tmpl = tmpl.replace(new RegExp('\{\{' + j + '\}\}', 'igm'), obj[j]);
+            }
+            temp = tmpl;
+        } else if(t.isArray(obj)) {
+            for(let i=0, len=obj.length; i<len; i++) {
+                str = tmpl;
+                for(let j in obj[i]) {
+                    str = str.replace(new RegExp('\{\{' + j + '\}\}', 'igm'), obj[i][j]);
+                }
+                temp += str;
+            }
+        }
+        return temp;
     },
     parserStatement(t, tmpl, obj) {
 

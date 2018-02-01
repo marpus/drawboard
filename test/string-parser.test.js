@@ -466,8 +466,8 @@ describe('parser', function() {
     // });
     it('condition of if is all of each floors', function() {
         var {temp, res} = test();
-        console.log(temp);
-        console.log(res);
+        console.log('temp', temp);
+        console.log('res', res);
         assert.equal(parser(temp, ThreeObj), res);
     });
   });
