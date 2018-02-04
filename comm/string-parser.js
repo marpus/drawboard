@@ -66,10 +66,11 @@ export default (tmpl, obj) => {
 };
 
 const parser = {
-    patternIfFor: /##(if|for)/g,
+    patternIfFor: /##(if|for|\{\{-|\{\{(?!-))/g,
     patternIf: /##if\s*?\(([\S\s]*?)\)\s*\{([\s\S]*)\}##/g,
     patternFor: /##for\s*?\(([\S\s]*?)\)\s*{([\S\s]*)\}##/g,
     patternVar: /\{\{(?!-)(.*?)\}\}/g,
+    patternStatement: /\{\{-([\s\S]*?)-\}\}/
     patternVarE: /\}\}/g,
     patternE: /[\s\S]*?\}(?=\s*##)/g, 
     patternHash: /##/g,
@@ -80,9 +81,9 @@ const parser = {
         // 设置全局变量
         t.globalEnv();
         for(tmpl=t.removeTrim(tmpl); arr=t.patternIfFor.exec(tmpl); ) {
-            // 跳转if,for方法
+            arr[1] = '{{' === arr[1] ? 'var' : '{{-' === arr[1] ? 'statement' : arr[1]; 
+            // 跳转if,for,statement,var
             tmpl = t.analysis({
-                t: t,
                 change: arr[1],
                 args: [tmpl, obj]
             });
@@ -147,7 +148,6 @@ const parser = {
         forCondition = t.removeTrim(forStr[1]);
         forStatement = t.removeTrim(forStr[2]);
         var {cond, arr} = t.analysis({
-            base: 'parser',
             change: 'condition',
             args: [forCondition, obj]
         });
@@ -160,7 +160,6 @@ const parser = {
         if(cond) {
             if(/\{\{(?!-)/g.test(forStatement)) {
                 tmp = t.analysis({
-                    base: 'parser',
                     change: 'var',
                     args: [forStatement, cond]
                 });
@@ -172,6 +171,11 @@ const parser = {
         if(!obj) return tmpl;
         var temp = '', str = '';
         if(t.isObject(obj)) {
+            if(/^\{\{.*\}\}$/.test(tmpl)) {
+
+            } else {
+
+            }
             for(let j in obj) {
                 tmpl = tmpl.replace(new RegExp('\{\{' + j + '\}\}', 'igm'), obj[j]);
             }
@@ -184,11 +188,15 @@ const parser = {
                 }
                 temp += str;
             }
+        } else if(t.is(obj, 'string')){
+            temp = tmpl.replace(tmpl, obj);
         }
         return temp;
     },
     parserStatement(t, tmpl, obj) {
-
+        /=/.test(tmpl);
+        /\?/.test(tmpl);
+        /\./.test(tmpl);
     },
     parserCondition(t, cond, obj) {
         var arr;
