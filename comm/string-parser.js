@@ -21,6 +21,15 @@ export default (tmpl, obj) => {
                 }##\
             </div>';
 
+    tmpl = '<ul>\
+                ##if({{this.c}}) {\
+                    <li>{{c.aa}}</li>\
+                    <li>{{c.bb}}</li>\
+                    <li>{{c.cc}}</li>\
+                    <li>{{c.dd}}</li>\
+                }##\
+            </ul>';
+
     obj = {
         a: {
             id: '01',
@@ -41,6 +50,12 @@ export default (tmpl, obj) => {
                     text: 'text3'
                 }
             ]
+        },
+        c: {
+            aa: 'aa',
+            bb: 'bb',
+            cc: 'cc',
+            dd: 'dd'
         }
     }
 
@@ -66,26 +81,39 @@ export default (tmpl, obj) => {
 };
 
 const parser = {
-    patternIfFor: /##(if|for|\{\{-|\{\{(?!-))/g,
+    patternIfFor: /(?:##|[\s\S]*?)(if|for|\{\{(?=-)|\{\{)/g,
     patternIf: /##if\s*?\(([\S\s]*?)\)\s*\{([\s\S]*)\}##/g,
     patternFor: /##for\s*?\(([\S\s]*?)\)\s*{([\S\s]*)\}##/g,
-    patternVar: /\{\{(?!-)(.*?)\}\}/g,
-    patternStatement: /\{\{-([\s\S]*?)-\}\}/
+    patternVar: /\{\{(?!-)([\s\S]*?)\}\}/g,
+    patternStatement: /\{\{-([\s\S]*?)-\}\}/,
     patternVarE: /\}\}/g,
     patternE: /[\s\S]*?\}(?=\s*##)/g, 
     patternHash: /##/g,
     patternThis: /this|obj/ig,
     patternG: /^[wg]/ig,
     parser(tmpl, obj) {
-        var t = this, arr;
+        var t = this, arrs;
         // 设置全局变量
         t.globalEnv();
-        for(tmpl=t.removeTrim(tmpl); arr=t.patternIfFor.exec(tmpl); ) {
-            arr[1] = '{{' === arr[1] ? 'var' : '{{-' === arr[1] ? 'statement' : arr[1]; 
+        for(tmpl=t.removeTrim(tmpl); arrs=t.patternIfFor.exec(tmpl); ) {
+            arrs[1] = '{{' === arrs[1] ? 'var' : '{{-' === arrs[1] ? 'statement' : arrs[1];
+            if('var' === arrs[1]) {
+                t.patternVar.lastIndex = 0;
+                var {cond, arr} = t.analysis({
+                    change: 'condition',
+                    args: [t.patternVar.exec(tmpl)[1], obj]
+                });
+                if(cond) {
+                    for(let i=1, len=arr.length; i<len; i++) {
+                        cond = cond[t.removeTrim(arr[i])];
+                        if(!cond) break;
+                    }
+                }
+            } 
             // 跳转if,for,statement,var
             tmpl = t.analysis({
-                change: arr[1],
-                args: [tmpl, obj]
+                change: arrs[1],
+                args: [tmpl, 'var' === arrs[1] ? cond : obj]
             });
             // 字符串会发生变动，定位需置0
             t.patternIfFor.lastIndex = 0;
@@ -171,11 +199,6 @@ const parser = {
         if(!obj) return tmpl;
         var temp = '', str = '';
         if(t.isObject(obj)) {
-            if(/^\{\{.*\}\}$/.test(tmpl)) {
-
-            } else {
-
-            }
             for(let j in obj) {
                 tmpl = tmpl.replace(new RegExp('\{\{' + j + '\}\}', 'igm'), obj[j]);
             }
@@ -189,7 +212,7 @@ const parser = {
                 temp += str;
             }
         } else if(t.is(obj, 'string')){
-            temp = tmpl.replace(tmpl, obj);
+            temp = tmpl.replace(/\{\{([\s\S]*?\}\})/, obj);
         }
         return temp;
     },
