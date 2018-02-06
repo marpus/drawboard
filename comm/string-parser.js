@@ -5,7 +5,7 @@
 export default (tmpl, obj) => {
     console.log('parser');
 
-    tmpl = '<ul>\
+    tmpl = '<ul class="aaa">\
                 ##for(obj.a) {\
                 <li>{{id}}</li>\
                 <li>{{text}}</li>\
@@ -21,9 +21,9 @@ export default (tmpl, obj) => {
                 }##\
             </div>';
 
-    tmpl = '<ul>\
+    tmpl = '<ul class="aaa">\
                 ##if({{this.c}}) {\
-                    <li>{{c.aa}}</li>\
+                    <li class="bbb">aaa {{c.aa}}</li>\
                     <li>{{c.bb}}</li>\
                     <li>{{c.cc}}</li>\
                     <li>{{c.dd}}</li>\
@@ -73,6 +73,8 @@ export default (tmpl, obj) => {
     // };
     
     if(!tmpl) return; 
+
+    // parser.removeTrim(tmpl);
 
     tmpl = parser.parser(tmpl, obj);
 
@@ -195,15 +197,10 @@ const parser = {
         }
         return [bstr, cond ? tmp : '', astr].join('');
     },
-    parserVar(t, tmpl, obj) {
+    parserVar(t, tmpl, obj, g) {
         if(!obj) return tmpl;
         var temp = '', str = '';
-        if(t.isObject(obj)) {
-            for(let j in obj) {
-                tmpl = tmpl.replace(new RegExp('\{\{' + j + '\}\}', 'igm'), obj[j]);
-            }
-            temp = tmpl;
-        } else if(t.isArray(obj)) {
+        if(t.isArray(obj)) {
             for(let i=0, len=obj.length; i<len; i++) {
                 str = tmpl;
                 for(let j in obj[i]) {
@@ -211,7 +208,14 @@ const parser = {
                 }
                 temp += str;
             }
-        } else if(t.is(obj, 'string')){
+        } else if(t.isObject(obj)) {
+            for(let j in obj) {
+                tmpl = tmpl.replace(new RegExp('\{\{' + j + '\}\}', 'igm'), obj[j]);
+            }
+            temp = tmpl;
+        } else if(t.is(obj, 'string') && g){
+            temp = tmpl.replace(/\{\{([\s\S]*?\}\})/g, obj);
+        } else if(!g) {
             temp = tmpl.replace(/\{\{([\s\S]*?\}\})/, obj);
         }
         return temp;
@@ -238,9 +242,6 @@ const parser = {
         }
         return {cond, arr};
     },
-    removeTrim(tmpl) {
-        return tmpl.replace(/^\s*|\s*$/gm, '');
-    },
     splitTemplate(t, tmpl) {
         var arr, str;
         t.patternE.lastIndex = 0;
@@ -251,10 +252,18 @@ const parser = {
             if(1 === i) break;
         }
         return {
-            str: t.removeTrim(tmpl.substring(0, t.patternE.lastIndex + 2)),
+            str: tmpl.substring(0, t.patternE.lastIndex + 2),
             bstr: t.removeTrim(tmpl.split('##')[0]),
             astr: t.removeTrim(tmpl.substring(t.patternE.lastIndex + 2))
         };
+    },
+    removeTrim(tmpl) {
+        return tmpl.replace(/^\s+|>\s+?<|\s+$/g, (match, index, str) => {
+            if(/>\s+</.test(match)) {
+                return '><';
+            } 
+            return '';
+        });
     },
     globalEnv(t = this) {
         t.g = global || window;
