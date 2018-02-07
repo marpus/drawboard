@@ -30,6 +30,10 @@ export default (tmpl, obj) => {
                 }##\
             </ul>';
 
+    tmpl = '<div>{{- ++d.aa -}}</div>';
+
+    tmpl = '<div>{{- d.bb + 1 - 5 -}}</div>';
+
     obj = {
         a: {
             id: '01',
@@ -56,6 +60,9 @@ export default (tmpl, obj) => {
             bb: 'bb',
             cc: 'cc',
             dd: 'dd'
+        },
+        d: {
+            aa: 1
         }
     }
 
@@ -83,7 +90,7 @@ export default (tmpl, obj) => {
 };
 
 const parser = {
-    patternIfFor: /(?:##|[\s\S]*?)(if|for|\{\{(?=-)|\{\{)/g,
+    patternIfFor: /(?:##|[\s\S]*?)(if|for|\{\{-|\{\{)/g,
     patternIf: /##if\s*?\(([\S\s]*?)\)\s*\{([\s\S]*)\}##/g,
     patternFor: /##for\s*?\(([\S\s]*?)\)\s*{([\S\s]*)\}##/g,
     patternVar: /\{\{(?!-)([\s\S]*?)\}\}/g,
@@ -221,9 +228,14 @@ const parser = {
         return temp;
     },
     parserStatement(t, tmpl, obj) {
-        /=/.test(tmpl);
-        /\?/.test(tmpl);
-        /\./.test(tmpl);
+        t.patternStatement.lastIndex = 0;
+        var condition = t.removeTrim(t.patternStatement.exec(tmpl)[1]);
+        var arr = condition.split(' ');
+        // var str = 'obj.' + arr;
+        // var z = eval(str);
+        // /=/.test(tmpl);
+        // /\?/.test(tmpl);
+        // /\./.test(tmpl);
     },
     parserCondition(t, cond, obj) {
         var arr;
